@@ -1,5 +1,4 @@
 package com.example.listviewsearch;
-
 import android.content.Context;
 import android.os.Bundle;
 import android.view.Menu;
@@ -16,19 +15,18 @@ import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
-import java.util.Arrays;
-
-
-import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
 
     private ListView listView;
     private CustomListAdapter adapter;
-    private ArrayList<String> arrayList;
-    private ArrayList<String> filteredList;
+    private ArrayList<Alumno> arrayList;
+    private ArrayList<Alumno> filteredList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,7 +35,18 @@ public class MainActivity extends AppCompatActivity {
 
         listView = findViewById(R.id.lstNombres);
 
-        arrayList = new ArrayList<>(Arrays.asList(getResources().getStringArray(R.array.array_nombres)));
+        arrayList = new ArrayList<>();
+        String[] nombres = getResources().getStringArray(R.array.array_nombres);
+        String[] matriculas = getResources().getStringArray(R.array.array_matriculas);
+        for (int i = 0; i < nombres.length; i++) {
+            String nombre = nombres[i];
+            String matricula = matriculas[i];
+            String imagenNombre = "img_alumno" + (i + 1);
+            int imagenId = getResources().getIdentifier(imagenNombre, "drawable", getPackageName());
+            Alumno alumno = new Alumno(nombre, matricula, imagenId);
+            arrayList.add(alumno);
+        }
+
         filteredList = new ArrayList<>(arrayList);
 
         adapter = new CustomListAdapter(this, R.layout.list_item, filteredList);
@@ -45,7 +54,8 @@ public class MainActivity extends AppCompatActivity {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                String selectedName = filteredList.get(position);
+                Alumno selectedAlumno = filteredList.get(position);
+                String selectedName = selectedAlumno.getNombre();
                 Toast.makeText(MainActivity.this, "Seleccionó el alumno: " + selectedName, Toast.LENGTH_SHORT).show();
             }
         });
@@ -70,9 +80,10 @@ public class MainActivity extends AppCompatActivity {
                     filteredList.addAll(arrayList);
                 } else {
                     String filterPattern = newText.toLowerCase().trim();
-                    for (String name : arrayList) {
-                        if (name.toLowerCase().contains(filterPattern)) {
-                            filteredList.add(name);
+                    for (Alumno alumno : arrayList) {
+                        if (alumno.getNombre().toLowerCase().contains(filterPattern) ||
+                                alumno.getMatricula().toLowerCase().contains(filterPattern)) {
+                            filteredList.add(alumno);
                         }
                     }
                 }
@@ -84,12 +95,12 @@ public class MainActivity extends AppCompatActivity {
         return super.onCreateOptionsMenu(menu);
     }
 
-    private class CustomListAdapter extends ArrayAdapter<String> implements Filterable {
+    private class CustomListAdapter extends ArrayAdapter<Alumno> implements Filterable {
         private int layoutResourceId;
-        private ArrayList<String> data;
-        private ArrayList<String> originalData;
+        private ArrayList<Alumno> data;
+        private ArrayList<Alumno> originalData;
 
-        public CustomListAdapter(Context context, int layoutResourceId, ArrayList<String> data) {
+        public CustomListAdapter(Context context, int layoutResourceId, ArrayList<Alumno> data) {
             super(context, layoutResourceId, data);
             this.layoutResourceId = layoutResourceId;
             this.data = data;
@@ -102,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        public String getItem(int position) {
+        public Alumno getItem(int position) {
             return data.get(position);
         }
 
@@ -130,13 +141,11 @@ public class MainActivity extends AppCompatActivity {
                 holder = (ViewHolder) row.getTag();
             }
 
-            String name = data.get(position);
-            holder.txtNombre.setText(name);
-            holder.txtMatricula.setText(getResources().getStringArray(R.array.array_matriculas)[position]);
+            Alumno alumno = data.get(position);
+            holder.txtNombre.setText(alumno.getNombre());
+            holder.txtMatricula.setText(alumno.getMatricula());
 
-            String imagenNombre = "img_alumno" + (position + 1);
-            int imagenId = getResources().getIdentifier(imagenNombre, "drawable", getPackageName());
-
+            int imagenId = alumno.getImagenId();
             if (imagenId != 0) {
                 holder.imgFoto.setImageResource(imagenId);
             } else {
@@ -153,16 +162,17 @@ public class MainActivity extends AppCompatActivity {
                 protected FilterResults performFiltering(CharSequence constraint) {
                     FilterResults results = new FilterResults();
 
-                    ArrayList<String> filteredList = new ArrayList<>();
+                    ArrayList<Alumno> filteredList = new ArrayList<>();
 
                     if (constraint == null || constraint.length() == 0) {
                         filteredList.addAll(originalData);
                     } else {
                         String filterPattern = constraint.toString().toLowerCase().trim();
 
-                        for (String name : originalData) {
-                            if (name.toLowerCase().contains(filterPattern)) {
-                                filteredList.add(name);
+                        for (Alumno alumno : originalData) {
+                            if (alumno.getNombre().toLowerCase().contains(filterPattern) ||
+                                    alumno.getMatricula().toLowerCase().contains(filterPattern)) {
+                                filteredList.add(alumno);
                             }
                         }
                     }
@@ -175,7 +185,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 protected void publishResults(CharSequence constraint, FilterResults results) {
                     filteredList.clear();
-                    filteredList.addAll((ArrayList<String>) results.values);
+                    filteredList.addAll((ArrayList<Alumno>) results.values);
                     notifyDataSetChanged();
                 }
             };
@@ -185,6 +195,30 @@ public class MainActivity extends AppCompatActivity {
             ImageView imgFoto;
             TextView txtNombre;
             TextView txtMatricula;
+        }
+    }
+
+    public class Alumno {
+        private String nombre;
+        private String matricula;
+        private int imagenId;
+
+        public Alumno(String nombre, String matricula, int imagenId) {
+            this.nombre = nombre;
+            this.matricula = matricula;
+            this.imagenId = imagenId;
+        }
+
+        public String getNombre() {
+            return nombre;
+        }
+
+        public String getMatricula() {
+            return matricula;
+        }
+
+        public int getImagenId() {
+            return imagenId;
         }
     }
 }
